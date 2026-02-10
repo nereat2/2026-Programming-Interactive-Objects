@@ -32,7 +32,7 @@ void setup() {
 
 	bg.enableColorCorrection(true);
 	matrix.addLayer(&bg);
-	matrix.setBrightness(255);
+	matrix.setBrightness(50);
 
 	// Init the library and the matrix
 	matrix.begin();

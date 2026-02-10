@@ -48,15 +48,56 @@ void setup() {
 
 }
 
+// http://www.pouet.net/prod.php?which=57245
+// If you intend to reuse this shader, please add credits to 'Danilo Guanabara'
+
+rgb24 shader(float x, float y, float time){
+	float c[3] = {0, 0, 0};
+	float l, z = time;
+	
+	for(int i = 0; i < 3; i++) {
+		// Normalize coordinates to [0, 1]
+		float uv_x = (x + 1.0) / 2.0;
+		float uv_y = (y + 1.0) / 2.0;
+		
+		float p_x = uv_x;
+		float p_y = uv_y;
+		
+		p_x -= 0.5;
+		p_y -= 0.5;
+		p_x *= (float)TOTAL_WIDTH / (float)TOTAL_HEIGHT;
+		
+		z += 0.07;
+		l = sqrt(p_x * p_x + p_y * p_y);
+		
+		if (l > 0.0001) {
+			float scale = (sin(z) + 1.0) * abs(sin(l * 9.0 - z - z));
+			uv_x += (p_x / l) * scale;
+			uv_y += (p_y / l) * scale;
+		}
+		
+		// mod(uv, 1.0) - 0.5
+		float mod_uv_x = uv_x - floor(uv_x) - 0.5;
+		float mod_uv_y = uv_y - floor(uv_y) - 0.5;
+		
+		float len_mod = sqrt(mod_uv_x * mod_uv_x + mod_uv_y * mod_uv_y);
+		if (len_mod > 0.0001) {
+			c[i] = 0.01 / len_mod;
+		}
+	}
+	
+	uint8_t r = (uint8_t)min(255.0f, c[0] * 255.0f);
+	uint8_t g = (uint8_t)min(255.0f, c[1] * 255.0f);
+	uint8_t b = (uint8_t)min(255.0f, c[2] * 255.0f);
+	
+	return {r, g, b};
+}
 
 int frame = 0;
 
 void loop() {
 
-
-	// calculate an offset (-1 to 1), based on "time" (frame)
-	float cx = sin((float) frame * 0.014);
-	float cy = cos((float) frame * 0.018);
+ float t = frame * 0.1;
 
 	for (int j=0; j<TOTAL_HEIGHT; j++) {
 		for (int i=0; i<TOTAL_WIDTH; i++) {
@@ -66,30 +107,8 @@ void loop() {
 			float x = (float) i / (TOTAL_WIDTH - 1) * 2.0 - 1.0;
 			float y = (float) j / (TOTAL_HEIGHT - 1) * 2.0 - 1.0;
 			
-			// add some offset 
-			x += cx;
-			y += cy;
-
-			float rx = x; 
-			float ry = y;
-
-			float gx = x + 0.1;
-			float gy = y + 0.1;
-
-			float bx = x - 0.1;
-			float by = y + 0.05;
-
-			
-			float rd = sqrt( rx * rx + ry * ry);
-			float gd = sqrt( gx * gx + gy * gy);
-			float bd = sqrt( bx * bx + by * by);
-			
-			// ...or obtain a "gray" value from the distance plugged into a periodic funtion
-			int red   = (sin(rd * 12.0 - frame * 0.42) * 0.5 + 0.5) * 255.0;
-			int green = (sin(gd * 12.0 - frame * 0.45) * 0.5 + 0.5) * 255.0;
-			int blue  = (sin(bd * 12.0 - frame * 0.47) * 0.5 + 0.5) * 255.0;
-
-			bg.drawPixel(i, j, {red, green, blue});
+			rgb24 out = shader(x,y,t); 
+			bg.drawPixel(i, j, out);
 		}
 	}
 

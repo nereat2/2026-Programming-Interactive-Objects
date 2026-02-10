@@ -43,26 +43,42 @@ void setup() {
 	matrix.addLayer(&bg);
 	matrix.setBrightness(255);
 
-	// Init the library and the matrix
 	matrix.begin();
-
-	// -------------------------------------------------------------------------
-
-	// Draw a red pixel at 0, 0 (top left)
-	bg.drawPixel(0, 0, {255, 0, 0});
-
-	// Draw a green pixel at 10, 0
-	// bg.drawPixel(10, 0, {0, 255, 0});
-
-	// Draw other things...
-	// bg.fillRectangle(12, 15, 30, 20, {200, 0, 180});
-	// bg.drawLine(10, 10, 30, 30, {255, 127, 0});
-
-	// Display the draw buffer
-	bg.swapBuffers();
 
 }
 
+uint frame = 0; 
+
 void loop() {
+	
+	int cx = 0.0;
+	int cy = 0.0;
+	float r = 0.75;
+
+	float t = (float) frame * 0.1;
+
+	for (int j=0; j<TOTAL_HEIGHT; j++) {
+		for (int i=0; i<TOTAL_WIDTH; i++) {
+
+			float u = (float)i / (TOTAL_WIDTH - 1) * 2 - 1.0;
+			float v = (float)j / (TOTAL_HEIGHT - 1) * 2 - 1.0;
+
+			float dx = cx - u; 
+			float dy = cy - v;
+
+			float d = sqrt( dx * dx + dy * dy);
+			float s = sin(d*8.0 + t* 0.5 + 0.5;
+			float gray = s * 255;
+			
+		
+			bg.drawPixel(i, j, {gray, gray, gray});
+			
+		}
+	}
+	
+	bg.swapBuffers();
+
+	frame++;
+	
 
 }
