@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Viewport</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #eee;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            /* Crucial for sharp edges */
+            border: 2px solid #444;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            width: 320px;
+            /* Scale up 10x */
+            height: 320px;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Matrix Viewport</h1>
+    <canvas id="matrix" width="32" height="32"></canvas>
+    <div id="status">Connecting...</div>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        const statusEl = document.getElementById('status');
+
+        // Create ImageData object for direct pixel manipulation
+        const width = 32;
+        const height = 32;
+        const imageData = ctx.createImageData(width, height);
+
+        function connect() {
+            // Assume we are hosted on the ESP32, so use relative path
+            // For testing locally, you might need to hardcode IP like 'ws://192.168.4.1/ws'
+            const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            const url = `${proto}://${window.location.hostname}/ws`;
+
+            // Fallback for local testing if hostname is empty (file://)
+            const wsUrl = window.location.hostname ? url : 'ws://192.168.4.1/ws';
+
+            console.log('Connecting to', wsUrl);
+            const ws = new WebSocket(wsUrl);
+            ws.binaryType = 'arraybuffer';
+
+            ws.onopen = () => {
+                statusEl.textContent = 'Connected';
+                statusEl.style.color = '#4f4';
+            };
+
+            ws.onclose = () => {
+                statusEl.textContent = 'Disconnected. Retrying...';
+                statusEl.style.color = '#f44';
+                setTimeout(connect, 2000);
+            };
+
+            ws.onmessage = (event) => {
+                if (event.data instanceof ArrayBuffer) {
+                    const data = new Uint8Array(event.data);
+
+                    // Expecting 32*32*3 bytes = 3072 bytes (RGB)
+                    if (data.length === width * height * 3) {
+                        let ptr = 0;
+                        for (let i = 0; i < width * height; i++) {
+                            // RGB from packet
+                            const r = data[ptr++];
+                            const g = data[ptr++];
+                            const b = data[ptr++];
+
+                            // RGBA for canvas
+                            const canvasIdx = i * 4;
+                            imageData.data[canvasIdx] = r;
+                            imageData.data[canvasIdx + 1] = g;
+                            imageData.data[canvasIdx + 2] = b;
+                            imageData.data[canvasIdx + 3] = 255; // Alpha
+                        }
+                        ctx.putImageData(imageData, 0, 0);
+                    }
+                }
+            };
+        }
+
+        connect();
+    </script>
+</body>
+
+</html>
