@@ -3,7 +3,7 @@
  *
  * Loop: detect → drop → simulate → render → send → next frame
  *
- * Pinch gesture triggers a water drop at the index finger position.
+ * Tap gesture triggers a water drop at the index finger position.
  * The simulation runs every frame regardless of hand presence.
  * Serial back-pressure naturally throttles the loop.
  */
@@ -42,9 +42,9 @@ const matrixCtx = matrixCanvas.getContext('2d', { willReadFrequently: true })
 
 let modelReady = false
 let serialPaused = false
-let wasNotPinching = true      // edge-detect: only drop on pinch start
+let wasNotTapping = true       // edge-detect: only drop on tap start
 let tintColor = { r: 60, g: 150, b: 255 }  // default water-blue tint
-let continuousDrop = false     // when true, drop every frame while pinching
+let continuousDrop = false     // when true, drop every frame while tapping
 
 // ─── Logging ─────────────────────────────────────────────────────────────────
 
@@ -122,7 +122,7 @@ function stopTracking() {
     video.classList.add('hidden')
     btnStart.textContent = 'Start Tracking'
     btnStart.classList.remove('active')
-    wasNotPinching = true
+    wasNotTapping = true
     log('Hand tracking stopped.')
 }
 
@@ -133,19 +133,19 @@ function processHandDetection() {
     if (!results) return
 
     const pos = Hand.getIndexFingerTip(results)
-    const pinching = Hand.isPinching(results)
+    const tapping = Hand.isTapping(results)
 
-    if (pos && pinching) {
-        if (wasNotPinching || continuousDrop) {
+    if (pos && tapping) {
+        if (wasNotTapping || continuousDrop) {
             // Trigger drop at finger position
             Water.dropAt(pos.x, pos.y)
-            if (wasNotPinching) {
-                log(`💧 Drop at (${pos.x}, ${pos.y})`)
+            if (wasNotTapping) {
+                log(`👆 Tap at (${pos.x}, ${pos.y})`)
             }
         }
-        wasNotPinching = false
+        wasNotTapping = false
     } else {
-        wasNotPinching = true
+        wasNotTapping = true
     }
 }
 
